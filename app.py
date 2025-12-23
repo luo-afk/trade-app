@@ -9,26 +9,35 @@ st.set_page_config(page_title="Family Alpha", page_icon="📈", layout="wide")
 user = check_login()
 
 # 3. Navigation Setup (Only happens if logged in)
+# ... (Previous imports and auth check) ...
+
 if st.session_state["authenticated"]:
-    
-    # Define the pages
+
+    # 1. Define the pages (Added 'Settings' category)
     pages = {
         "Portfolio": [
-            st.Page("views/dashboard.py", title="Overview & Compare", icon="📊", default=True),
+            st.Page("views/dashboard.py", title="Overview", icon="📊", default=True),
             st.Page("views/entry.py", title="Log a Trade", icon="➕"),
             st.Page("views/journal.py", title="Trade Journal", icon="📖"),
         ],
         "Intelligence": [
             st.Page("views/analysis.py", title="AI Analysis", icon="🧠"),
+        ],
+        "Settings": [
+            st.Page("views/profile.py", title="My Profile", icon="👤"),
         ]
     }
 
-    # Run the navigation
     pg = st.navigation(pages)
-    
-    # Optional: Add a logo to the sidebar
-    st.logo("https://img.icons8.com/ios-filled/50/FFFFFF/bullish.png", icon_image="https://img.icons8.com/ios-filled/50/FFFFFF/bullish.png")
-    
-    st.sidebar.text(f"👤 {user['full_name']}")
-    
+
+    # 2. Sidebar Customization
+    st.sidebar.markdown("---")
+
+    # This creates the "Clickable" User Profile
+    # It links directly to the views/profile.py page
+    st.sidebar.page_link("views/profile.py", label=st.session_state["user"]["full_name"], icon="👤")
+
+    # Optional: Keep the logout button in sidebar as a backup,
+    # but we also have it on the profile page now.
+
     pg.run()

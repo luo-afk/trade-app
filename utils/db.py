@@ -27,3 +27,12 @@ def get_trades():
 
 def get_users():
     return supabase.table("users").select("*").execute().data
+
+def update_user_profile(username, new_full_name, new_password):
+    """Updates the user's password and display name"""
+    data = {
+        "full_name": new_full_name,
+        "password": new_password
+    }
+    # Update the row where username matches
+    supabase.table("users").update(data).eq("username", username).execute()
