@@ -1,123 +1,90 @@
 import streamlit as st
-from supabase import create_client, Client
 import pandas as pd
 import plotly.express as px
-import time
+from utils.auth import check_login
+from utils.db import log_trade, get_trades
+from utils.market import calculate_portfolio_value
 
-# 1. Page Config
-st.set_page_config(page_title="Family Alpha", page_icon="📈", layout="centered")
+# 1. Config & Login
+st.set_page_config(page_title="Public Family", page_icon="📈", layout="wide") # 'Wide' layout looks more like a dashboard
+user = check_login()
 
-# 2. Connect to DB
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
-supabase: Client = create_client(url, key)
-
-# --- NEW AUTHENTICATION LOGIC ---
-def login_user(username, password):
-    """Checks DB for username/password match"""
-    try:
-        # Query the users table
-        response = supabase.table("users").select("*").eq("username", username).execute()
-        # Check if user exists and password matches
-        if len(response.data) > 0:
-            user_data = response.data[0]
-            if user_data['password'] == password:
-                return user_data
-    except Exception as e:
-        st.error(f"Login Error: {e}")
-    return None
-
-def init_session():
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-        st.session_state["username"] = None
-        st.session_state["full_name"] = None
-
-init_session()
-
-# --- LOGIN SCREEN ---
-if not st.session_state["authenticated"]:
-    st.title("🔒 Family Trade Login")
-    
-    with st.form("login_form"):
-        username = st.text_input("Username").lower().strip()
-        password = st.text_input("Password", type="password")
-        submit = st.form_submit_button("Log In")
-        
-        if submit:
-            user = login_user(username, password)
-            if user:
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = user['username']
-                st.session_state["full_name"] = user['full_name']
-                st.success("Login successful!")
-                st.rerun()
-            else:
-                st.error("Incorrect username or password")
-    
-    st.stop()  # Stop here if not logged in
-
-# --- MAIN APP (Only runs if logged in) ---
-
-# Sidebar for Logout
+# 2. Sidebar (Profile)
 with st.sidebar:
-    st.write(f"Logged in as: **{st.session_state['full_name']}**")
+    st.header(f"👤 {user['full_name']}")
     if st.button("Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
-
-st.title("📈 Family Trade Journal")
-st.write(f"Welcome back, {st.session_state['full_name']}.")
-
-# --- INPUT FORM (UPDATED) ---
-# We removed the 'Who is trading?' selector because we know who it is now!
-with st.expander("📝 Log a New Trade", expanded=False):
-    with st.form("trade_form"):
-        col1, col2 = st.columns(2)
-        ticker = col1.text_input("Ticker (e.g. NVDA)").upper()
-        action = col2.selectbox("Action", ["Buy", "Sell"])
-        price = st.number_input("Price", min_value=0.01, step=0.01)
-        reasoning = st.text_area("Why? (The Strategy)", placeholder="Earnings beat expectations...")
-        
-        submitted = st.form_submit_button("Log Trade")
-        
-        if submitted:
-            data = {
-                "user_name": st.session_state["username"],  # AUTOMATICALLY USE LOGGED IN USER
-                "ticker": ticker,
-                "action": action,
-                "price": price,
-                "reasoning": reasoning
-            }
-            supabase.table("trades").insert(data).execute()
-            st.success(f"Logged {action} order for {ticker}!")
-            time.sleep(1)
+    st.markdown("---")
+    st.write("### ➕ Add Trade")
+    with st.form("add_trade"):
+        t_ticker = st.text_input("Ticker").upper()
+        t_action = st.selectbox("Action", ["Buy", "Sell"])
+        t_qty = st.number_input("Shares", min_value=0.01, step=0.1) # NEW: Quantity
+        t_price = st.number_input("Entry Price", min_value=0.01, step=0.01)
+        t_reason = st.text_area("Thesis")
+        if st.form_submit_button("Submit"):
+            log_trade(user['username'], t_ticker, t_action, t_price, t_qty, t_reason)
+            st.success("Trade Logged!")
             st.rerun()
 
-# --- DASHBOARD ---
-st.divider()
-st.subheader("📊 Active Portfolio")
+# 3. Main Dashboard
+st.title("Family Portfolio")
 
-# Fetch ALL trades (so they can see each other's trades)
-# OR: Filter by .eq("user_name", st.session_state["username"]) if you want privacy
-response = supabase.table("trades").select("*").order("created_at", desc=True).execute()
-df = pd.DataFrame(response.data)
+# Load Data
+raw_data = get_trades()
+df = pd.DataFrame(raw_data)
 
 if not df.empty:
-    st.metric("Total Trades Logged", len(df))
+    # --- REAL TIME CALCULATIONS ---
+    # Only calculate for OPEN positions (assuming everything logged is held for now)
+    # For a complex app, you'd filter out 'Closed' trades.
+    total_val, enriched_df = calculate_portfolio_value(df)
     
-    # Show table
-    st.dataframe(
-        df[["created_at", "user_name", "ticker", "action", "price", "reasoning"]],
-        hide_index=True,
-        use_container_width=True
-    )
-    
-    # Chart
-    if 'user_name' in df.columns:
-        trade_counts = df['user_name'].value_counts().reset_index()
-        trade_counts.columns = ['User', 'Count']
-        fig = px.bar(trade_counts, x='User', y='Count', title="Leaderboard", color="User")
+    total_invested = enriched_df['cost_basis'].sum()
+    total_pnl = total_val - total_invested
+    pnl_color = "normal" if total_pnl >= 0 else "off" # Streamlit metric delta color handling
+
+    # --- TOP METRICS ROW ---
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Portfolio Value", f"${total_val:,.2f}")
+    col2.metric("Total Gain/Loss", f"${total_pnl:,.2f}", delta=f"{(total_pnl/total_invested)*100:.1f}%")
+    col3.metric("Active Positions", len(df))
+
+    st.markdown("---")
+
+    # --- THE "PUBLIC.COM" STYLE FEED ---
+    # Split layout: Charts on left, Feed on right
+    left_col, right_col = st.columns([2, 1])
+
+    with left_col:
+        st.subheader("📈 Performance")
+        # Visual: Bar chart of Gainers vs Losers
+        fig = px.bar(
+            enriched_df, 
+            x="ticker", 
+            y="unrealized_pnl", 
+            color="unrealized_pnl",
+            color_continuous_scale=["red", "green"],
+            title="Unrealized P&L by Asset",
+            hover_data=["quantity", "price", "current_price"]
+        )
         st.plotly_chart(fig, use_container_width=True)
+
+    with right_col:
+        st.subheader("📢 Social Feed")
+        # Create cards for each trade
+        for index, row in enriched_df.iterrows():
+            with st.container(border=True):
+                st.markdown(f"**{row['user_name']}** {row['action']} **{row['quantity']} {row['ticker']}**")
+                st.caption(f"Entry: ${row['price']} • Current: ${row['current_price']:.2f}")
+                
+                # Color code the return
+                color = "green" if row['return_pct'] > 0 else "red"
+                st.markdown(f"Return: :{color}[{row['return_pct']:.2f}%]")
+                
+                if row['reasoning']:
+                    st.info(f"\"{row['reasoning']}\"")
+
 else:
-    st.info("No trades yet.")
+    st.info("No trades found. Use the sidebar to add your first position!")
