@@ -29,7 +29,6 @@ with st.container(border=True):
         with st.spinner(f"Fetching live price for {ticker}..."):
             current_price = get_current_price(ticker)
         
-        # Handle case where API returns None
         if current_price is None: 
             current_price = 0.0
         
@@ -49,9 +48,7 @@ with st.container(border=True):
     
     final_qty = 0.0
     
-    # --- FIX IS HERE ---
-    # If current_price is 0 (invalid), set value to None so Streamlit uses the min_value (0.01) default
-    # instead of crashing.
+    # Safe default for the input box
     safe_default_price = current_price if current_price > 0 else None
     
     with col1:
@@ -63,18 +60,22 @@ with st.container(border=True):
         )
 
     with col2:
-        if input_mode == "By Share Quantity":
-            qty_input = st.number_input("Number of Shares", min_value=0.01, step=1.0)
-            if qty_input > 0:
-                estimated_total = qty_input * entry_price
-                st.info(f"Total Invested: **${estimated_total:,.2f}**")
-                final_qty = qty_input
+        # Check if entry_price is valid (Not None) before doing math
+        if entry_price is not None:
+            if input_mode == "By Share Quantity":
+                qty_input = st.number_input("Number of Shares", min_value=0.01, step=1.0)
+                if qty_input > 0:
+                    estimated_total = qty_input * entry_price
+                    st.info(f"Total Invested: **${estimated_total:,.2f}**")
+                    final_qty = qty_input
+            else:
+                amount_input = st.number_input("Total Amount Spent ($)", min_value=1.0, step=10.0)
+                if amount_input > 0:
+                    calculated_shares = amount_input / entry_price
+                    st.info(f"This equals **{calculated_shares:.4f} shares**")
+                    final_qty = calculated_shares
         else:
-            amount_input = st.number_input("Total Amount Spent ($)", min_value=1.0, step=10.0)
-            if amount_input > 0 and entry_price > 0:
-                calculated_shares = amount_input / entry_price
-                st.info(f"This equals **{calculated_shares:.4f} shares**")
-                final_qty = calculated_shares
+            st.warning("Please enter a valid Price first.")
 
     st.divider()
 
@@ -86,7 +87,8 @@ with st.container(border=True):
     submit = st.button("Log Trade", type="primary", use_container_width=True)
 
     if submit:
-        if ticker and final_qty > 0 and entry_price > 0:
+        # Check that entry_price is not None before submitting
+        if ticker and final_qty > 0 and entry_price is not None and entry_price > 0:
             log_trade(
                 st.session_state["user"]["username"], 
                 ticker, 
