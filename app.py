@@ -31,7 +31,7 @@ if st.session_state["authenticated"]:
     pg = st.navigation(pages)
 
     # 2. Sidebar Customization
-    st.sidebar.markdown("---")
+    # st.sidebar.markdown("---")
 
     # This creates the "Clickable" User Profile
     # It links directly to the views/profile.py page
