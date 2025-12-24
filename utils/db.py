@@ -36,3 +36,7 @@ def update_user_profile(username, new_full_name, new_password, new_avatar_url):
         "avatar_url": new_avatar_url
     }
     supabase.table("users").update(data).eq("username", username).execute()
+
+def delete_trade(trade_id):
+    """Deletes a specific trade by ID"""
+    supabase.table("trades").delete().eq("id", trade_id).execute()

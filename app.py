@@ -17,6 +17,7 @@ if st.session_state["authenticated"]:
     pages = {
         "Portfolio": [
             st.Page("views/dashboard.py", title="Overview", icon="📊", default=True),
+            st.Page("views/leaderboard.py", title="Leaderboard", icon="🏆"), # NEW
             st.Page("views/entry.py", title="Log a Trade", icon="➕"),
             st.Page("views/journal.py", title="Trade Journal", icon="📖"),
         ],
@@ -24,7 +25,7 @@ if st.session_state["authenticated"]:
             st.Page("views/analysis.py", title="AI Analysis", icon="🧠"),
         ],
         "Settings": [
-            st.Page("views/profile.py", title="My Profile", icon="👤"),
+            st.Page("views/profile.py", title="My Profile", icon="👤"), 
         ]
     }
 
