@@ -35,7 +35,7 @@ if st.session_state["authenticated"]:
 
     # This creates the "Clickable" User Profile
     # It links directly to the views/profile.py page
-    st.sidebar.page_link("views/profile.py", label=st.session_state["user"]["full_name"], icon="👤")
+    # st.sidebar.page_link("views/profile.py", label=st.session_state["user"]["full_name"], icon="👤")
 
     # Optional: Keep the logout button in sidebar as a backup,
     # but we also have it on the profile page now.
