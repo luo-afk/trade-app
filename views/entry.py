@@ -5,14 +5,12 @@ from utils.market import get_current_price, get_common_tickers
 
 st.title("➕ Log a New Trade")
 
-# 1. Ticker Selection (Autocompletes from our list)
-# We also allow them to type a custom one if it's not in the list.
+# 1. Ticker Selection
 common_tickers = get_common_tickers()
 
 with st.container(border=True):
     st.subheader("1. Asset Details")
     
-    # The 'index=None' makes it empty by default so they have to type/select
     ticker = st.selectbox(
         "Search Ticker (e.g. NVDA, VOO)", 
         options=common_tickers, 
@@ -20,7 +18,6 @@ with st.container(border=True):
         placeholder="Type to search..."
     )
 
-    # Allow custom ticker if not in list
     if not ticker:
         manual_ticker = st.text_input("Or type a custom ticker manually:")
         if manual_ticker:
@@ -32,38 +29,47 @@ with st.container(border=True):
         with st.spinner(f"Fetching live price for {ticker}..."):
             current_price = get_current_price(ticker)
         
-        if current_price:
+        # Handle case where API returns None
+        if current_price is None: 
+            current_price = 0.0
+        
+        if current_price > 0:
             st.metric(label=f"Current Price of {ticker}", value=f"${current_price:,.2f}")
         else:
-            st.error(f"Could not fetch price for {ticker}. Please enter manually below.")
+            st.warning(f"Could not fetch price for {ticker}. Please enter manually below.")
 
     st.divider()
 
     # 3. Dynamic Entry (Shares vs. Dollars)
     st.subheader("2. Position Size")
     
-    # Toggle Switch
     input_mode = st.radio("How do you want to enter this?", ["By Share Quantity", "By Total Amount ($)"], horizontal=True)
 
     col1, col2 = st.columns(2)
     
     final_qty = 0.0
-    final_price = 0.0
-
+    
+    # --- FIX IS HERE ---
+    # If current_price is 0 (invalid), set value to None so Streamlit uses the min_value (0.01) default
+    # instead of crashing.
+    safe_default_price = current_price if current_price > 0 else None
+    
     with col1:
-        # Override price if they got a different fill
-        entry_price = st.number_input("Fill Price", value=current_price, min_value=0.01, format="%.2f")
+        entry_price = st.number_input(
+            "Fill Price", 
+            value=safe_default_price, 
+            min_value=0.01, 
+            format="%.2f"
+        )
 
     with col2:
         if input_mode == "By Share Quantity":
-            # Normal Mode: Enter Shares -> Calc Total
             qty_input = st.number_input("Number of Shares", min_value=0.01, step=1.0)
             if qty_input > 0:
                 estimated_total = qty_input * entry_price
                 st.info(f"Total Invested: **${estimated_total:,.2f}**")
                 final_qty = qty_input
         else:
-            # Smart Mode: Enter $$$ -> Calc Shares
             amount_input = st.number_input("Total Amount Spent ($)", min_value=1.0, step=10.0)
             if amount_input > 0 and entry_price > 0:
                 calculated_shares = amount_input / entry_price
@@ -91,7 +97,6 @@ with st.container(border=True):
             )
             st.success(f"✅ Logged {action} {final_qty:.4f} shares of {ticker}!")
             time.sleep(2)
-            st.switch_page("views/dashboard.py") # Auto redirect to dashboard
+            st.switch_page("views/dashboard.py")
         else:
             st.error("Please ensure Ticker, Price, and Quantity are set.")
-
