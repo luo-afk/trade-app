@@ -2,7 +2,7 @@ import pandas as pd
 import yfinance as yf
 import streamlit as st
 
-@st.cache_data(ttl=3600) # Cache for 1 hour so we don't spam Yahoo
+@st.cache_data(ttl=3600) 
 def get_portfolio_history(trades_df, period="1mo"):
     """
     Reconstructs the daily portfolio value based on trade history.
@@ -14,63 +14,89 @@ def get_portfolio_history(trades_df, period="1mo"):
     # 1. Get list of all tickers ever traded
     tickers = trades_df['ticker'].unique().tolist()
     
-    # 2. Download historical data for all tickers at once
-    # We add a buffer to the period to ensure we have data for the start calculation
-    history = yf.download(tickers, period=period, progress=False)['Close']
+    # 2. Download historical data
+    # group_by='ticker' ensures consistent MultiIndex structure even for single tickers
+    try:
+        data = yf.download(tickers, period=period, progress=False, group_by='ticker')
+    except:
+        return pd.DataFrame()
+
+    # 3. Extract "Close" prices safely
+    history = pd.DataFrame()
     
-    # Handle single ticker case (yfinance formatting weirdness)
     if len(tickers) == 1:
-        history = history.to_frame(name=tickers[0])
-    
-    # Fill missing weekends/holidays with the previous Friday's price
+        # Single ticker case: yfinance returns a DataFrame with columns like [Open, Close, ...]
+        ticker = tickers[0]
+        if 'Close' in data.columns:
+            history[ticker] = data['Close']
+        else:
+            # Fallback for weird yfinance single-level indexing
+            history[ticker] = data.iloc[:, 3] # Assumes Close is 4th column
+    else:
+        # Multiple tickers: Data is MultiIndex (Ticker -> PriceType)
+        # We want to extract just the 'Close' column for every ticker
+        for t in tickers:
+            try:
+                # Try to get Close for this specific ticker
+                if (t, 'Close') in data.columns:
+                    history[t] = data[(t, 'Close')]
+                elif t in data.columns and 'Close' in data[t].columns:
+                     history[t] = data[t]['Close']
+            except:
+                pass
+
+    # Fill missing weekends/holidays
     history = history.ffill()
 
-    # 3. Create a timeline of daily values
+    # 4. Create a timeline of daily values
     portfolio_history = []
 
     # Iterate through every day in the downloaded history
     for date in history.index:
-        # Find trades that happened ON or BEFORE this specific date
-        # We assume trade entry_date is timezone-naive or we strip tz for comparison
-        date_tz_naive = date.tz_localize(None)
+        # Ensure date comparison is timezone-naive
+        date_naive = date.tz_localize(None) if date.tzinfo else date
         
-        relevant_trades = trades_df[pd.to_datetime(trades_df['created_at']).dt.tz_localize(None) <= date_tz_naive]
+        # Find trades that happened ON or BEFORE this specific date
+        # Convert trade dates to naive for comparison
+        trades_df['created_at'] = pd.to_datetime(trades_df['created_at'])
+        
+        # Safe timezone handling for the filter
+        mask = trades_df['created_at'].apply(lambda x: x.tz_localize(None) if x.tzinfo else x) <= date_naive
+        relevant_trades = trades_df[mask]
         
         if relevant_trades.empty:
             continue
             
         # Calculate holdings for this specific day
-        # (Group by ticker and sum the Buy/Sell quantities)
         holdings = {}
         cost_basis = 0.0
         
         for _, trade in relevant_trades.iterrows():
             qty = float(trade['quantity'])
             price = float(trade['price'])
+            t_symbol = trade['ticker']
             
-            if trade['ticker'] not in holdings:
-                holdings[trade['ticker']] = 0.0
+            if t_symbol not in holdings:
+                holdings[t_symbol] = 0.0
             
             if trade['action'] == "Buy":
-                holdings[trade['ticker']] += qty
+                holdings[t_symbol] += qty
                 cost_basis += (qty * price)
             elif trade['action'] == "Sell":
-                holdings[trade['ticker']] -= qty
-                # Simplified cost basis reduction for selling
+                holdings[t_symbol] -= qty
                 cost_basis -= (qty * price) 
 
         # Calculate Total Market Value for this day
         daily_value = 0.0
         for ticker, shares in holdings.items():
             if shares > 0:
-                # Get the price of that ticker on that specific day
                 if ticker in history.columns:
-                    # Use .loc with nearest valid index if exact match fails
                     try:
                         daily_price = history.loc[date, ticker]
-                        daily_value += shares * daily_price
+                        if pd.notna(daily_price):
+                            daily_value += shares * daily_price
                     except:
-                        pass # Price missing for this day
+                        pass
         
         # Calculate Return %
         pct_return = ((daily_value - cost_basis) / cost_basis * 100) if cost_basis > 0 else 0
@@ -87,15 +113,21 @@ def get_portfolio_history(trades_df, period="1mo"):
 @st.cache_data(ttl=3600)
 def get_benchmark_history(ticker, period="1mo"):
     """Fetches a benchmark (like SPY) and normalizes it to % return"""
-    data = yf.Ticker(ticker).history(period=period)['Close']
-    if data.empty:
+    try:
+        data = yf.Ticker(ticker).history(period=period)['Close']
+        if data.empty:
+            return pd.DataFrame()
+        
+        # Normalize: (Price - StartPrice) / StartPrice * 100
+        start_price = data.iloc[0]
+        normalized = ((data - start_price) / start_price) * 100
+        
+        df = normalized.reset_index()
+        df.columns = ["Date", "Return %"]
+        
+        # Handle timezone for merging
+        df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
+        
+        return df
+    except:
         return pd.DataFrame()
-    
-    # Normalize: (Price - StartPrice) / StartPrice * 100
-    start_price = data.iloc[0]
-    normalized = ((data - start_price) / start_price) * 100
-    
-    df = normalized.reset_index()
-    df.columns = ["Date", "Return %"]
-    df['Type'] = ticker # Label for the chart
-    return df
