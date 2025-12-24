@@ -1,65 +1,138 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import yfinance as yf
-from utils.db import get_trades
-from utils.market import calculate_portfolio_value
+from utils.db import get_trades, get_users
+from utils.analytics import get_portfolio_history, get_benchmark_history
 
-st.title("📊 Performance Overview")
+st.title("📊 Portfolio Performance")
 
-# 1. Load User Data
-raw_data = get_trades()
-df = pd.DataFrame(raw_data)
+# --- 1. CONTROLS (Time & Comparison) ---
+col_ctrl1, col_ctrl2 = st.columns([1, 2])
 
-if df.empty:
-    st.warning("No data yet. Go to 'Log a Trade' to start.")
+with col_ctrl1:
+    # Time Period Selector
+    time_period = st.selectbox("Time Period", ["1d", "5d", "1mo", "3mo", "6mo", "1y", "ytd"], index=2)
+
+with col_ctrl2:
+    # Benchmark / User Comparison
+    # Get other users
+    all_users = get_users()
+    user_options = [u['username'] for u in all_users if u['username'] != st.session_state["user"]["username"]]
+    
+    compare_options = ["SPY", "QQQ", "BTC-USD"] + [f"User: {u}" for u in user_options]
+    
+    benchmarks = st.multiselect("Compare with:", compare_options, default=["SPY"])
+
+st.divider()
+
+# --- 2. DATA PREPARATION ---
+# Get current user trades
+all_trades = pd.DataFrame(get_trades())
+if all_trades.empty:
+    st.info("No trades found. Log a trade to see the chart.")
     st.stop()
 
-# 2. Calculate Portfolio Values
-total_val, enriched_df = calculate_portfolio_value(df)
+# Filter for current user
+my_trades = all_trades[all_trades['user_name'] == st.session_state["user"]["username"]]
 
-# 3. Get Benchmark Data (S&P 500)
-# We fetch SPY history to compare 
-@st.cache_data
-def get_benchmark():
-    spy = yf.Ticker("SPY")
-    hist = spy.history(period="1mo")
-    # Calculate % return over last month
-    start = hist['Close'].iloc[0]
-    end = hist['Close'].iloc[-1]
-    return ((end - start) / start) * 100
+# Generate History for Current User
+with st.spinner("Crunching numbers..."):
+    my_history = get_portfolio_history(my_trades, period=time_period)
 
-spy_return = get_benchmark()
+if my_history.empty:
+    st.warning("Not enough data to chart this time period.")
+    st.stop()
 
-# 4. Calculate User Return (Simple approximation for now)
-# (Current Value - Total Cost) / Total Cost
-total_cost = enriched_df['cost_basis'].sum()
-user_pnl = total_val - total_cost
-user_return = (user_pnl / total_cost) * 100 if total_cost > 0 else 0
+# --- 3. THE BIG CHART ---
 
-# 5. The Comparison Section
-st.subheader("Family vs. The Market (1 Mo)")
+# Get the latest values for the big number display
+latest = my_history.iloc[-1]
+current_val = latest["Portfolio Value"]
+current_return = latest["Return %"]
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Family Portfolio Return", f"{user_return:.2f}%", delta=f"{user_return:.2f}%")
-col2.metric("S&P 500 (Benchmark)", f"{spy_return:.2f}%", delta=f"{spy_return:.2f}%", delta_color="off")
-col3.metric("Alpha (Beating the Market)", f"{user_return - spy_return:.2f}%", 
-            delta_color="normal" if user_return > spy_return else "inverse")
+# Metrics Row
+m1, m2, m3 = st.columns(3)
+m1.metric("Portfolio Value", f"${current_val:,.2f}")
+m2.metric("Total Return", f"{current_return:.2f}%", delta=f"{current_return:.2f}%")
+m3.caption(f"Showing data for: {time_period.upper()}")
 
-st.markdown("---")
+# Prepare Chart Data
+# We start with our data
+chart_df = my_history[["Date", "Return %"]].copy()
+chart_df["Type"] = "My Portfolio"
 
-# 6. Leaderboard (Who is doing best?)
-st.subheader("🏆 Family Leaderboard")
-if 'return_pct' in enriched_df.columns:
-    # Group by user and avg return
-    leaderboard = enriched_df.groupby('user_name')['unrealized_pnl'].sum().reset_index()
-    leaderboard = leaderboard.sort_values('unrealized_pnl', ascending=False)
+# Add Benchmarks (SPY, etc.)
+for bench in benchmarks:
+    if "User: " in bench:
+        # Compare against another user
+        target_user = bench.replace("User: ", "")
+        their_trades = all_trades[all_trades['user_name'] == target_user]
+        if not their_trades.empty:
+            their_hist = get_portfolio_history(their_trades, period=time_period)
+            if not their_hist.empty:
+                temp_df = their_hist[["Date", "Return %"]].copy()
+                temp_df["Type"] = target_user # Label as their name
+                chart_df = pd.concat([chart_df, temp_df])
+    else:
+        # Compare against Ticker (SPY, BTC)
+        bench_hist = get_benchmark_history(bench, period=time_period)
+        if not bench_hist.empty:
+            bench_hist["Type"] = bench
+            chart_df = pd.concat([chart_df, bench_hist])
+
+# Plotly Line Chart
+fig = px.line(
+    chart_df, 
+    x="Date", 
+    y="Return %", 
+    color="Type", 
+    title=f"Growth Comparison ({time_period})",
+    template="plotly_dark", # Matches the dark theme
+    color_discrete_map={
+        "My Portfolio": "#00FF7F", # Bright Green for user
+        "SPY": "gray",
+        "BTC-USD": "orange"
+    }
+)
+
+# Make it look like the Public app (Fill area for user only)
+# This is a bit advanced plotly config
+fig.update_traces(selector={"name": "My Portfolio"}, fill='tozeroy', fillcolor='rgba(0, 255, 127, 0.1)')
+fig.update_yaxes(ticksuffix="%")
+st.plotly_chart(fig, use_container_width=True)
+
+
+# --- 4. ROI LEADERBOARD ---
+st.subheader("🏆 Growth Leaderboard")
+
+# Calculate ROI for every user found in trades
+if not all_trades.empty:
+    users_in_trades = all_trades['user_name'].unique()
+    leaderboard_data = []
+
+    for u in users_in_trades:
+        u_trades = all_trades[all_trades['user_name'] == u]
+        # Get history to calculate accurate ROI based on holding duration
+        # Or simpler: (Current Value - Cost Basis) / Cost Basis
+        # We re-use the history function for accuracy
+        hist = get_portfolio_history(u_trades, period="1y") # Look at 1Y for leaderboard
+        if not hist.empty:
+            last_day = hist.iloc[-1]
+            leaderboard_data.append({
+                "Trader": u,
+                "Return %": last_day["Return %"],
+                "Portfolio Value": last_day["Portfolio Value"]
+            })
+
+    lb_df = pd.DataFrame(leaderboard_data).sort_values("Return %", ascending=False)
     
+    # Display nicely
     st.dataframe(
-        leaderboard, 
+        lb_df,
+        column_order=["Trader", "Return %", "Portfolio Value"],
         column_config={
-            "user_name": "Trader",
-            "unrealized_pnl": st.column_config.NumberColumn("Total Profit", format="$%.2f")
+            "Return %": st.column_config.NumberColumn(format="%.2f%%"),
+            "Portfolio Value": st.column_config.NumberColumn(format="$%.2f"),
         },
         hide_index=True,
         use_container_width=True
