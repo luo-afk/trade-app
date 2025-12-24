@@ -47,3 +47,19 @@ def calculate_portfolio_value(trades_df):
     
     total_value = trades_df['market_value'].sum()
     return total_value, trades_df
+
+# utils/market.py (Add this to the bottom)
+
+def get_common_tickers():
+    """Returns a list of popular tickers for autocomplete"""
+    # You can expand this list later!
+    return [
+        "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "NFLX", # Tech
+        "SPY", "VOO", "VTI", "QQQ", "IWM", "DIA", "SCHD", "JEPI", # ETFs
+        "JPM", "BAC", "WFC", "V", "MA", "AXP", # Finance
+        "KO", "PEP", "MCD", "SBUX", "WMT", "TGT", # Consumer
+        "DIS", "NKE", "HD", "LOW", "COST", # Retail
+        "XOM", "CVX", "NEE", # Energy
+        "JNJ", "PFE", "LLY", "UNH", # Healthcare
+        "AMD", "INTC", "QCOM", "CRM", "ADBE" # Chips/Software
+    ]
