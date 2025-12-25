@@ -133,3 +133,32 @@ def get_benchmark_history(ticker, period="1d", interval="5m"):
         return df
     except:
         return pd.DataFrame()
+
+@st.cache_data(ttl=3600)
+def get_bulk_history(tickers, period="1mo"):
+    """Fetches simple % return history for a list of tickers (Users or ETFs)"""
+    if not tickers:
+        return pd.DataFrame()
+    
+    try:
+        # Fetch all at once
+        data = yf.download(tickers, period=period, progress=False)['Close']
+        
+        # Clean up if single ticker
+        if len(tickers) == 1:
+            data = data.to_frame(name=tickers[0])
+            
+        # Calculate % Return ((Current - Start) / Start)
+        results = []
+        for t in tickers:
+            if t in data.columns:
+                series = data[t].dropna()
+                if not series.empty:
+                    start = series.iloc[0]
+                    end = series.iloc[-1]
+                    pct = ((end - start) / start) * 100
+                    results.append({"Name": t, "Return %": pct})
+        
+        return pd.DataFrame(results)
+    except Exception as e:
+        return pd.DataFrame()

@@ -8,8 +8,9 @@ from utils.ui_components import render_top_bar
 render_top_bar()
 
 # --- CONFIG ---
+# FIX: Ensure default is uppercase '1D' to match the TIME_MAP keys
 if "dashboard_period" not in st.session_state:
-    st.session_state["dashboard_period"] = "1d"
+    st.session_state["dashboard_period"] = "1D"
 
 # Map to (period, interval)
 TIME_MAP = {
@@ -20,6 +21,10 @@ TIME_MAP = {
     "1Y": ("1y", "1d"),
     "ALL": ("max", "1w"),
 }
+
+# Safety check: If session state has an invalid old key (like '1d' lowercase), reset it
+if st.session_state["dashboard_period"] not in TIME_MAP:
+    st.session_state["dashboard_period"] = "1D"
 
 # --- CONTROLS ---
 # Simple segmented text buttons for time
@@ -86,7 +91,6 @@ fig.add_trace(go.Scatter(
 ))
 
 # 2. The Baseline (Dotted Line)
-# We draw a line from Start Date to End Date at the 'baseline_value' Y-level
 fig.add_trace(go.Scatter(
     x=[history["Date"].iloc[0], history["Date"].iloc[-1]],
     y=[baseline_value, baseline_value],
@@ -96,7 +100,7 @@ fig.add_trace(go.Scatter(
     hoverinfo="skip"
 ))
 
-# 3. Public.com Styling
+# 3. Styling
 fig.update_layout(
     template="plotly_dark",
     paper_bgcolor='rgba(0,0,0,0)',
@@ -104,8 +108,8 @@ fig.update_layout(
     margin=dict(l=0, r=0, t=10, b=0),
     showlegend=False,
     hovermode="x unified",
-    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), # Clean X
-    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)  # Clean Y
+    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), 
+    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)  
 )
 
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
