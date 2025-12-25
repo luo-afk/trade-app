@@ -5,20 +5,16 @@ from utils.analytics import get_portfolio_history
 from utils.ui_components import render_top_bar
 import pandas as pd
 
+# FIX: Import First
 st.session_state["current_page"] = "dashboard"
 render_top_bar()
 
-# --- CONFIG ---
 if "dashboard_period" not in st.session_state:
     st.session_state["dashboard_period"] = "1D"
 
 TIME_MAP = {
-    "1D": ("1d", "5m"),
-    "1W": ("5d", "15m"),
-    "1M": ("1mo", "1d"),
-    "3M": ("3mo", "1d"),
-    "1Y": ("1y", "1d"),
-    "ALL": ("max", "1w"),
+    "1D": ("1d", "5m"), "1W": ("5d", "15m"), "1M": ("1mo", "1d"),
+    "3M": ("3mo", "1d"), "1Y": ("1y", "1d"), "ALL": ("max", "1w"),
 }
 
 # --- DATA ---
@@ -32,14 +28,14 @@ my_trades = df_trades[df_trades['user_name'] == st.session_state["user"]["userna
 
 selected_period, selected_interval = TIME_MAP[st.session_state["dashboard_period"]]
 
-with st.spinner(""): # Empty spinner prevents UI jump
+with st.spinner(""):
     history = get_portfolio_history(my_trades, period=selected_period, interval=selected_interval)
 
 if history.empty:
-    st.warning("No data.")
+    st.warning("Market Closed / No Data")
     st.stop()
 
-# --- COMPACT LAYOUT ---
+# --- HEADER LAYOUT ---
 latest = history.iloc[-1]
 baseline_value = history.iloc[0]["Portfolio Value"]
 current_value = latest["Portfolio Value"]
@@ -48,30 +44,33 @@ diff = current_value - baseline_value
 pct = (diff / baseline_value) * 100 if baseline_value > 0 else 0
 line_color = "#00FF00" if diff >= 0 else "#FF4B4B"
 
-# 1. Header Row (Big Number + Time Controls)
-c1, c2 = st.columns([2, 1])
+c1, c2 = st.columns([1.5, 1], vertical_alignment="bottom")
 
 with c1:
-    # Reduced font size (42px -> 32px)
+    # Big Number
     st.markdown(f"""
-        <div style="font-size: 32px; font-weight: 700; line-height: 1.1;">${current_value:,.2f}</div>
-        <div style="color: {line_color}; font-size: 14px; margin-bottom: 5px;">
-            {'+' if diff >= 0 else ''}${diff:,.2f} ({pct:.2f}%)
+        <div style="font-size: 36px; font-weight: 700; line-height: 1;">${current_value:,.2f}</div>
+        <div style="color: {line_color}; font-size: 14px;">
+            {'+' if diff >= 0 else ''}${diff:,.2f} ({pct:.2f}%) 
+            <span style="color:#666; margin-left:5px;">{st.session_state["dashboard_period"]}</span>
         </div>
     """, unsafe_allow_html=True)
 
 with c2:
-    # Compact Time Buttons
-    cols = st.columns(len(TIME_MAP))
+    # TIME BUTTONS FIX: Use explicit small columns
+    # This prevents the vertical stacking "Ugly Button" issue
+    b_cols = st.columns(len(TIME_MAP))
     for i, label in enumerate(TIME_MAP.keys()):
-        type = "primary" if st.session_state["dashboard_period"] == label else "secondary"
-        if cols[i].button(label, key=label, type=type, use_container_width=True):
+        # Custom logic to highlight the active button
+        is_active = st.session_state["dashboard_period"] == label
+        if b_cols[i].button(label, key=label, use_container_width=True):
             st.session_state["dashboard_period"] = label
             st.rerun()
 
-# 2. Compact Chart
+# --- CHART ---
 fig = go.Figure()
 
+# Portfolio Line
 fig.add_trace(go.Scatter(
     x=history["Date"], 
     y=history["Portfolio Value"],
@@ -83,6 +82,7 @@ fig.add_trace(go.Scatter(
     hovertemplate='$%{y:,.2f}'
 ))
 
+# Baseline Dotted
 fig.add_trace(go.Scatter(
     x=[history["Date"].iloc[0], history["Date"].iloc[-1]],
     y=[baseline_value, baseline_value],
@@ -91,16 +91,27 @@ fig.add_trace(go.Scatter(
     hoverinfo="skip"
 ))
 
+# Calculate Y-Axis Range to prevent "Flat Line" look
+y_min = history["Portfolio Value"].min()
+y_max = history["Portfolio Value"].max()
+padding = (y_max - y_min) * 0.1 if y_max != y_min else y_max * 0.01
+range_y = [y_min - padding, y_max + padding]
+
 fig.update_layout(
     template="plotly_dark",
     paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
     margin=dict(l=0, r=0, t=10, b=0),
-    height=350, # Reduced height (was default ~450)
+    height=300,
     showlegend=False,
     hovermode="x unified",
     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), 
-    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)  
+    yaxis=dict(
+        showgrid=False, 
+        zeroline=False, 
+        showticklabels=False, 
+        range=range_y # FORCE RANGE
+    )  
 )
 
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})

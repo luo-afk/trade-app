@@ -1,64 +1,86 @@
-/* --- GLOBAL --- */
+/* --- GLOBAL LAYOUT --- */
 .block-container {
-    padding-top: 1rem !important;
+    padding-top: 1.5rem !important;
     padding-bottom: 2rem !important;
     max-width: 95% !important;
 }
 
-/* --- SIDEBAR --- */
-/* Restore default behavior (text visible) */
-
-/* --- SEARCH BAR --- */
-div[data-testid="stTextInput"] {
-    margin-bottom: 0px !important;
+/* --- BRANDING HEADER --- */
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
 }
-div[data-testid="stTextInput"] input {
-    background-color: #121212;
-    border: 1px solid #333;
-    border-radius: 8px;
+.app-title {
+    font-size: 24px;
+    font-weight: 700;
     color: white;
-    font-size: 14px;
-    padding: 8px 12px;
+    font-family: sans-serif;
+    letter-spacing: -0.5px;
 }
 
 /* --- TICKER TAPE (Top Bar) --- */
 .ticker-tape {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     background-color: #121212;
-    padding: 10px 15px;
+    padding: 8px 15px;
     border-radius: 8px;
-    border: 1px solid #2a2a2a;
+    border: 1px solid #333;
     overflow-x: auto;
     white-space: nowrap;
-    margin-bottom: 15px;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    margin-bottom: 20px;
+    font-family: sans-serif;
+    font-size: 13px;
+    height: 40px; /* Fixed height for consistency */
 }
 
 .ticker-item {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
-    font-size: 13px;
 }
 
-.ticker-symbol {
-    font-weight: 700;
-    color: #E0E0E0;
-}
-
-/* --- METRIC CARDS --- */
-div[data-testid="metric-container"] {
+/* --- TIME BUTTONS (The Fix) --- */
+/* Target the buttons inside the dashboard controls */
+div[data-testid="column"] button {
     background-color: #121212;
-    border: 1px solid #2a2a2a;
-    padding: 15px;
-    border-radius: 12px;
+    color: #888;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 2px 10px; /* Shorter padding */
+    font-size: 12px;
+    min-height: 0px !important; /* Force shrink height */
+    height: 32px !important;
+    width: 100%;
 }
 
-/* --- CHART CLEANUP --- */
+div[data-testid="column"] button:hover {
+    border-color: #00FF00;
+    color: #00FF00;
+}
+
+div[data-testid="column"] button:focus {
+    background-color: #1E1E1E;
+    color: #00FF00;
+    border-color: #00FF00;
+}
+
+/* --- SEARCH BAR --- */
+div[data-testid="stTextInput"] {
+    margin-top: -15px; /* Pull it up to align with logo */
+}
+div[data-testid="stTextInput"] input {
+    background-color: #121212;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+/* --- PLOTLY CLEANUP --- */
 .js-plotly-plot .plotly .main-svg {
     background: rgba(0,0,0,0) !important;
 }
