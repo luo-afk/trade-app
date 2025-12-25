@@ -1,9 +1,10 @@
-st.session_state["current_page"] = "stock"
-
 import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
 from utils.ui_components import render_top_bar
+
+# FIX: This line must be AFTER imports
+st.session_state["current_page"] = "stock"
 
 render_top_bar()
 
@@ -27,7 +28,7 @@ hist = stock.history(period="1mo")
 if not hist.empty:
     curr = hist['Close'].iloc[-1]
     prev = hist['Close'].iloc[0]
-    color = "#00FF7F" if curr >= prev else "#FF4B4B"
+    color = "#00C805" if curr >= prev else "#FF4B4B"
     
     st.metric("Price", f"${curr:,.2f}", f"{(curr-prev)/prev*100:.2f}%")
     
