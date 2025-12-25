@@ -8,18 +8,23 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Auth
-user = check_login()
+# 2. Sidebar Branding (The Top Slot)
+# 'icon_image' is shown when collapsed, 'image' is shown when expanded.
+# Since we don't have a wide image URL for text, we use the duck for both 
+# and let the user know via the UI context or just keep it minimal.
+st.logo(
+    "https://img.icons8.com/color/96/duck.png", 
+    link="https://google.com", 
+    icon_image="https://img.icons8.com/color/96/duck.png"
+)
 
-# 3. Sidebar Branding (New)
-if st.session_state.get("authenticated"):
-    with st.sidebar:
-        st.markdown("""
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left: 5px;">
-                <img src="https://img.icons8.com/color/96/duck.png" width="32">
-                <span style="font-size: 18px; font-weight: bold; color: white; font-family: sans-serif;">WaddleWealth</span>
-            </div>
-        """, unsafe_allow_html=True)
+# To add the text "WaddleWealth" next to it at the top, Streamlit requires
+# a single image file containing both logo + text. 
+# However, we can add a title right below the logo space if we want text separation.
+# But st.logo is the only element that sits ABOVE navigation.
+
+# 3. Auth
+user = check_login()
 
 # 4. Navigation
 if st.session_state["authenticated"]:

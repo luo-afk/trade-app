@@ -1,24 +1,51 @@
 /* --- GLOBAL LAYOUT --- */
 .block-container {
-    padding-top: 3rem !important; /* Increased space so it's not cut off */
+    padding-top: 2rem !important;
     padding-bottom: 2rem !important;
     max-width: 95% !important;
 }
 
-/* --- SIDEBAR BRANDING --- */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 5px;
-    margin-bottom: 10px;
+/* --- SIDEBAR --- */
+/* This ensures the sidebar doesn't jump around */
+[data-testid="stSidebar"] {
+    min-width: 200px;
+    max-width: 300px;
 }
-.sidebar-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    font-family: sans-serif;
-    letter-spacing: -0.5px;
+
+/* --- TIME BUTTONS (The Fix) --- */
+/* Target the buttons specifically in the dashboard columns */
+div[data-testid="column"] button {
+    background-color: #121212 !important;
+    color: #888 !important;
+    border: 1px solid #333 !important;
+    border-radius: 6px !important;
+    
+    /* Force Single Line & Size */
+    white-space: nowrap !important;
+    padding: 0px 5px !important;
+    font-size: 11px !important;
+    min-height: 0px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    width: 100%;
+}
+
+div[data-testid="column"] button:hover {
+    border-color: #00FF00 !important;
+    color: #00FF00 !important;
+}
+
+div[data-testid="column"] button:focus, div[data-testid="column"] button:active {
+    background-color: #1E1E1E !important;
+    color: #00FF00 !important;
+    border-color: #00FF00 !important;
+}
+
+/* Highlight the 'Primary' button (Active State) */
+div[data-testid="column"] button[kind="primary"] {
+    color: #00FF00 !important;
+    border-color: #00FF00 !important;
+    background-color: #1a1a1a !important;
 }
 
 /* --- TICKER TAPE --- */
@@ -44,32 +71,10 @@
     gap: 8px;
 }
 
-/* --- BUTTONS --- */
-div[data-testid="column"] button {
-    background-color: #121212;
-    color: #888;
-    border: 1px solid #333;
-    border-radius: 6px;
-    padding: 2px 10px;
-    font-size: 12px;
-    min-height: 0px !important;
-    height: 32px !important;
-    width: 100%;
-}
-
-div[data-testid="column"] button:hover {
-    border-color: #00FF00;
-    color: #00FF00;
-}
-
-div[data-testid="column"] button:focus {
-    background-color: #1E1E1E;
-    color: #00FF00;
-    border-color: #00FF00;
-}
-
 /* --- SEARCH BAR --- */
-/* Removed negative margin */
+div[data-testid="stTextInput"] {
+    margin-top: -15px;
+}
 div[data-testid="stTextInput"] input {
     background-color: #121212;
     border: 1px solid #333;

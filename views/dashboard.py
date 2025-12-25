@@ -5,10 +5,10 @@ from utils.analytics import get_portfolio_history
 from utils.ui_components import render_top_bar
 import pandas as pd
 
-# FIX: Import First
 st.session_state["current_page"] = "dashboard"
 render_top_bar()
 
+# --- CONFIG ---
 if "dashboard_period" not in st.session_state:
     st.session_state["dashboard_period"] = "1D"
 
@@ -44,10 +44,9 @@ diff = current_value - baseline_value
 pct = (diff / baseline_value) * 100 if baseline_value > 0 else 0
 line_color = "#00FF00" if diff >= 0 else "#FF4B4B"
 
-c1, c2 = st.columns([1.5, 1], vertical_alignment="bottom")
+c1, c2 = st.columns([2, 1], vertical_alignment="bottom")
 
 with c1:
-    # Big Number
     st.markdown(f"""
         <div style="font-size: 36px; font-weight: 700; line-height: 1;">${current_value:,.2f}</div>
         <div style="color: {line_color}; font-size: 14px;">
@@ -57,20 +56,19 @@ with c1:
     """, unsafe_allow_html=True)
 
 with c2:
-    # TIME BUTTONS FIX: Use explicit small columns
-    # This prevents the vertical stacking "Ugly Button" issue
-    b_cols = st.columns(len(TIME_MAP))
+    # Render buttons tightly
+    b_cols = st.columns(len(TIME_MAP), gap="small")
     for i, label in enumerate(TIME_MAP.keys()):
-        # Custom logic to highlight the active button
         is_active = st.session_state["dashboard_period"] == label
-        if b_cols[i].button(label, key=label, use_container_width=True):
+        # Use 'primary' kind for active, 'secondary' for inactive
+        kind = "primary" if is_active else "secondary"
+        if b_cols[i].button(label, key=label, type=kind, use_container_width=True):
             st.session_state["dashboard_period"] = label
             st.rerun()
 
 # --- CHART ---
 fig = go.Figure()
 
-# Portfolio Line
 fig.add_trace(go.Scatter(
     x=history["Date"], 
     y=history["Portfolio Value"],
@@ -82,7 +80,6 @@ fig.add_trace(go.Scatter(
     hovertemplate='$%{y:,.2f}'
 ))
 
-# Baseline Dotted
 fig.add_trace(go.Scatter(
     x=[history["Date"].iloc[0], history["Date"].iloc[-1]],
     y=[baseline_value, baseline_value],
@@ -91,7 +88,6 @@ fig.add_trace(go.Scatter(
     hoverinfo="skip"
 ))
 
-# Calculate Y-Axis Range to prevent "Flat Line" look
 y_min = history["Portfolio Value"].min()
 y_max = history["Portfolio Value"].max()
 padding = (y_max - y_min) * 0.1 if y_max != y_min else y_max * 0.01
@@ -106,12 +102,7 @@ fig.update_layout(
     showlegend=False,
     hovermode="x unified",
     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), 
-    yaxis=dict(
-        showgrid=False, 
-        zeroline=False, 
-        showticklabels=False, 
-        range=range_y # FORCE RANGE
-    )  
+    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=range_y)  
 )
 
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
