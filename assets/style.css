@@ -1,26 +1,27 @@
 /* --- GLOBAL LAYOUT --- */
 .block-container {
-    padding-top: 1.5rem !important;
+    padding-top: 3rem !important; /* Increased space so it's not cut off */
     padding-bottom: 2rem !important;
     max-width: 95% !important;
 }
 
-/* --- BRANDING HEADER --- */
-.app-header {
+/* --- SIDEBAR BRANDING --- */
+.sidebar-brand {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 15px;
+    padding: 10px 5px;
+    margin-bottom: 10px;
 }
-.app-title {
-    font-size: 24px;
+.sidebar-title {
+    font-size: 20px;
     font-weight: 700;
     color: white;
     font-family: sans-serif;
     letter-spacing: -0.5px;
 }
 
-/* --- TICKER TAPE (Top Bar) --- */
+/* --- TICKER TAPE --- */
 .ticker-tape {
     display: flex;
     align-items: center;
@@ -34,7 +35,7 @@
     margin-bottom: 20px;
     font-family: sans-serif;
     font-size: 13px;
-    height: 40px; /* Fixed height for consistency */
+    height: 40px;
 }
 
 .ticker-item {
@@ -43,16 +44,15 @@
     gap: 8px;
 }
 
-/* --- TIME BUTTONS (The Fix) --- */
-/* Target the buttons inside the dashboard controls */
+/* --- BUTTONS --- */
 div[data-testid="column"] button {
     background-color: #121212;
     color: #888;
     border: 1px solid #333;
     border-radius: 6px;
-    padding: 2px 10px; /* Shorter padding */
+    padding: 2px 10px;
     font-size: 12px;
-    min-height: 0px !important; /* Force shrink height */
+    min-height: 0px !important;
     height: 32px !important;
     width: 100%;
 }
@@ -69,9 +69,7 @@ div[data-testid="column"] button:focus {
 }
 
 /* --- SEARCH BAR --- */
-div[data-testid="stTextInput"] {
-    margin-top: -15px; /* Pull it up to align with logo */
-}
+/* Removed negative margin */
 div[data-testid="stTextInput"] input {
     background-color: #121212;
     border: 1px solid #333;
@@ -80,7 +78,7 @@ div[data-testid="stTextInput"] input {
     padding: 8px 12px;
 }
 
-/* --- PLOTLY CLEANUP --- */
+/* --- CHART --- */
 .js-plotly-plot .plotly .main-svg {
     background: rgba(0,0,0,0) !important;
 }

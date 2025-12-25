@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.auth import check_login
 
-# 1. Config - WaddleWealth Branding
+# 1. Config
 st.set_page_config(
     page_title="WaddleWealth", 
     page_icon="https://img.icons8.com/color/96/duck.png", 
@@ -11,7 +11,17 @@ st.set_page_config(
 # 2. Auth
 user = check_login()
 
-# 3. Navigation
+# 3. Sidebar Branding (New)
+if st.session_state.get("authenticated"):
+    with st.sidebar:
+        st.markdown("""
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left: 5px;">
+                <img src="https://img.icons8.com/color/96/duck.png" width="32">
+                <span style="font-size: 18px; font-weight: bold; color: white; font-family: sans-serif;">WaddleWealth</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+# 4. Navigation
 if st.session_state["authenticated"]:
     
     pages = {

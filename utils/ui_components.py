@@ -4,7 +4,6 @@ import pytz
 import yfinance as yf
 import pandas as pd
 
-# --- CACHED DATA FETCH ---
 @st.cache_data(ttl=60)
 def get_market_tape():
     symbols = {"SPY": "SPY", "QQQ": "QQQ", "BTC-USD": "BTC", "^VIX": "VIX"}
@@ -28,25 +27,26 @@ def get_market_tape():
     except:
         return []
 
+def get_market_status():
+    tz = pytz.timezone('US/Eastern')
+    now = datetime.datetime.now(tz)
+    is_weekday = now.weekday() < 5
+    current_hour = now.hour + (now.minute / 60)
+    is_open = is_weekday and (9.5 <= current_hour < 16.0)
+    
+    color = "#00FF00" if is_open else "#888888"
+    status_text = "Market Open" if is_open else "Market Closed"
+    date_str = now.strftime("%B %d")
+    return color, status_text, date_str
+
 def render_top_bar():
-    # Load CSS
     with open("assets/style.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     
-    # 1. HEADER ROW: Logo | Search
-    c1, c2 = st.columns([1, 2], gap="medium", vertical_alignment="center")
+    # 1. TOP ROW: Search (Left) | Status (Right)
+    c1, c2 = st.columns([1, 1], gap="medium", vertical_alignment="center")
     
     with c1:
-        # BRANDING
-        st.markdown("""
-            <div class="app-header">
-                <img src="https://img.icons8.com/color/96/duck.png" width="36" height="36">
-                <span class="app-title">WaddleWealth</span>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with c2:
-        # SEARCH
         def handle_search():
             if st.session_state["top_search"]:
                 st.session_state["selected_ticker"] = st.session_state["top_search"].upper()
@@ -64,7 +64,16 @@ def render_top_bar():
             st.session_state["trigger_redirect"] = False
             st.switch_page("views/stock.py")
 
-    # 2. MARKET TAPE ROW
+    with c2:
+        color, status, date = get_market_status()
+        st.markdown(f"""
+            <div style="display: flex; justify-content: flex-end; align-items: center; color: #666; font-size: 13px; font-family: sans-serif;">
+                <span style="color: {color}; font-weight: bold; margin-right: 8px;">● {status.upper()}</span>
+                <span>{date}</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # 2. MARKET TAPE
     tape = get_market_tape()
     if tape:
         html_items = ""
