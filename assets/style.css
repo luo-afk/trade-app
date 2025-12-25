@@ -1,24 +1,30 @@
-/* Make sidebar tighter and more professional */
-[data-testid="stSidebar"] {
-    width: 250px !important;
-    padding-top: 2rem;
+/* --- SIDEBAR FIX --- */
+section[data-testid="stSidebar"] {
+    width: 80px !important; /* Thin rail style */
+    min-width: 80px !important;
+    max-width: 80px !important;
 }
 
-/* Hide default streamlit menu decoration */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+/* Hide the expand/collapse button to keep it static if possible, 
+   or just accept Streamlit's behavior but force width on contents */
 
-/* Custom Search Bar Styling */
-div[data-testid="stTextInput"] input {
-    border-radius: 12px;
-    background-color: #161b22;
-    border: 1px solid #30363d;
-}
-
-/* Metric Containers */
+/* --- PUBLIC.COM STYLE CARDS --- */
 div[data-testid="metric-container"] {
-    background-color: #161b22;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #30363d;
+    background-color: #121212; /* Dark Grey Card */
+    border: 1px solid #2a2a2a;
+    padding: 20px;
+    border-radius: 16px; /* Smooth corners */
+}
+
+/* --- SEARCH BAR --- */
+div[data-testid="stTextInput"] input {
+    background-color: #121212;
+    border: 1px solid #333;
+    border-radius: 20px; /* Pill shape */
+    color: white;
+}
+
+/* --- PLOTLY CHART BACKGROUND --- */
+.js-plotly-plot .plotly .main-svg {
+    background: rgba(0,0,0,0) !important;
 }

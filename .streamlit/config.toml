@@ -1,8 +1,8 @@
 [theme]
-primaryColor = "#00C805"  # Professional Robinhood/Public Green (Darker)
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#161b22"
-textColor = "#FAFAFA"
+primaryColor = "#00FF00"  # Public's Neon Green
+backgroundColor = "#000000" # Pure Black background
+secondaryBackgroundColor = "#121212" # Dark Grey for sidebar/cards
+textColor = "#FFFFFF"
 font = "sans serif"
 
 [client]
