@@ -1,30 +1,48 @@
-/* --- SIDEBAR FIX --- */
-section[data-testid="stSidebar"] {
-    width: 80px !important; /* Thin rail style */
-    min-width: 80px !important;
-    max-width: 80px !important;
+/* --- RESET SIDEBAR TO DEFAULT (SHOW WORDS) --- */
+/* We removed the fixed width constraint here so text reappears */
+
+/* --- COMPACT LAYOUT --- */
+/* Reduces the huge whitespace at the top of Streamlit apps */
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 95% !important;
 }
 
-/* Hide the expand/collapse button to keep it static if possible, 
-   or just accept Streamlit's behavior but force width on contents */
-
-/* --- PUBLIC.COM STYLE CARDS --- */
-div[data-testid="metric-container"] {
-    background-color: #121212; /* Dark Grey Card */
-    border: 1px solid #2a2a2a;
-    padding: 20px;
-    border-radius: 16px; /* Smooth corners */
-}
-
-/* --- SEARCH BAR --- */
-div[data-testid="stTextInput"] input {
+/* --- TOP BAR (TICKER TAPE) --- */
+.ticker-tape {
+    display: flex;
+    gap: 20px;
     background-color: #121212;
+    padding: 8px 15px;
+    border-radius: 8px;
     border: 1px solid #333;
-    border-radius: 20px; /* Pill shape */
-    color: white;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 10px;
+    align-items: center;
+    font-family: sans-serif;
+    font-size: 13px;
 }
 
-/* --- PLOTLY CHART BACKGROUND --- */
-.js-plotly-plot .plotly .main-svg {
-    background: rgba(0,0,0,0) !important;
+.ticker-item {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.ticker-symbol {
+    font-weight: 600;
+    color: #AAA;
+}
+
+/* --- SEARCH INPUT COMPACT --- */
+div[data-testid="stTextInput"] {
+    margin-bottom: 0px !important;
+}
+div[data-testid="stTextInput"] input {
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #0E1117;
+    border: 1px solid #333;
 }

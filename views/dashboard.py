@@ -1,20 +1,17 @@
 import streamlit as st
 import plotly.graph_objects as go
 from utils.db import get_trades
-from utils.analytics import get_portfolio_history, get_benchmark_history
+from utils.analytics import get_portfolio_history
 from utils.ui_components import render_top_bar
+import pandas as pd
 
-# FIX: This line must be AFTER imports
 st.session_state["current_page"] = "dashboard"
-
-# 1. Render Top Bar
 render_top_bar()
 
 # --- CONFIG ---
 if "dashboard_period" not in st.session_state:
     st.session_state["dashboard_period"] = "1D"
 
-# Map to (period, interval)
 TIME_MAP = {
     "1D": ("1d", "5m"),
     "1W": ("5d", "15m"),
@@ -24,57 +21,55 @@ TIME_MAP = {
     "ALL": ("max", "1w"),
 }
 
-# Safety check
-if st.session_state["dashboard_period"] not in TIME_MAP:
-    st.session_state["dashboard_period"] = "1D"
-
-# --- CONTROLS ---
-cols = st.columns(len(TIME_MAP))
-for i, label in enumerate(TIME_MAP.keys()):
-    type = "primary" if st.session_state["dashboard_period"] == label else "secondary"
-    if cols[i].button(label, key=label, type=type, use_container_width=True):
-        st.session_state["dashboard_period"] = label
-        st.rerun()
-
 # --- DATA ---
-selected_period, selected_interval = TIME_MAP[st.session_state["dashboard_period"]]
 all_trades = get_trades()
-
 if not all_trades:
     st.info("No trades yet.")
     st.stop()
 
-# Filter my trades
-import pandas as pd
 df_trades = pd.DataFrame(all_trades)
 my_trades = df_trades[df_trades['user_name'] == st.session_state["user"]["username"]]
 
-# Get History
-with st.spinner("Loading..."):
+selected_period, selected_interval = TIME_MAP[st.session_state["dashboard_period"]]
+
+with st.spinner(""): # Empty spinner prevents UI jump
     history = get_portfolio_history(my_trades, period=selected_period, interval=selected_interval)
 
 if history.empty:
-    st.warning("Market data unavailable for this period (or market is closed).")
+    st.warning("No data.")
     st.stop()
 
-# --- METRICS & BASELINE ---
+# --- COMPACT LAYOUT ---
 latest = history.iloc[-1]
 baseline_value = history.iloc[0]["Portfolio Value"]
 current_value = latest["Portfolio Value"]
 
 diff = current_value - baseline_value
 pct = (diff / baseline_value) * 100 if baseline_value > 0 else 0
+line_color = "#00FF00" if diff >= 0 else "#FF4B4B"
 
-line_color = "#00C805" if diff >= 0 else "#FF4B4B"
+# 1. Header Row (Big Number + Time Controls)
+c1, c2 = st.columns([2, 1])
 
-st.markdown(f"""
-    <div style="font-size: 42px; font-weight: 700;">${current_value:,.2f}</div>
-    <div style="color: {line_color}; font-size: 16px; margin-bottom: 20px;">
-        {'+' if diff >= 0 else ''}${diff:,.2f} ({pct:.2f}%)
-    </div>
-""", unsafe_allow_html=True)
+with c1:
+    # Reduced font size (42px -> 32px)
+    st.markdown(f"""
+        <div style="font-size: 32px; font-weight: 700; line-height: 1.1;">${current_value:,.2f}</div>
+        <div style="color: {line_color}; font-size: 14px; margin-bottom: 5px;">
+            {'+' if diff >= 0 else ''}${diff:,.2f} ({pct:.2f}%)
+        </div>
+    """, unsafe_allow_html=True)
 
-# --- CHART ---
+with c2:
+    # Compact Time Buttons
+    cols = st.columns(len(TIME_MAP))
+    for i, label in enumerate(TIME_MAP.keys()):
+        type = "primary" if st.session_state["dashboard_period"] == label else "secondary"
+        if cols[i].button(label, key=label, type=type, use_container_width=True):
+            st.session_state["dashboard_period"] = label
+            st.rerun()
+
+# 2. Compact Chart
 fig = go.Figure()
 
 fig.add_trace(go.Scatter(
@@ -82,6 +77,8 @@ fig.add_trace(go.Scatter(
     y=history["Portfolio Value"],
     mode='lines',
     line=dict(color=line_color, width=2),
+    fill='tozeroy',
+    fillcolor=f"rgba({0 if diff < 0 else 0}, {255 if diff >= 0 else 0}, 0, 0.1)",
     name="Portfolio",
     hovertemplate='$%{y:,.2f}'
 ))
@@ -90,8 +87,7 @@ fig.add_trace(go.Scatter(
     x=[history["Date"].iloc[0], history["Date"].iloc[-1]],
     y=[baseline_value, baseline_value],
     mode='lines',
-    line=dict(color="gray", width=1, dash='dot'),
-    name="Open",
+    line=dict(color="#444", width=1, dash='dot'),
     hoverinfo="skip"
 ))
 
@@ -100,6 +96,7 @@ fig.update_layout(
     paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
     margin=dict(l=0, r=0, t=10, b=0),
+    height=350, # Reduced height (was default ~450)
     showlegend=False,
     hovermode="x unified",
     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), 
