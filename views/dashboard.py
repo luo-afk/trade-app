@@ -44,7 +44,8 @@ diff = current_value - baseline_value
 pct = (diff / baseline_value) * 100 if baseline_value > 0 else 0
 line_color = "#00FF00" if diff >= 0 else "#FF4B4B"
 
-c1, c2 = st.columns([2, 1], vertical_alignment="bottom")
+# ADJUSTED COLUMN RATIO: [1, 1] to give buttons more room
+c1, c2 = st.columns([1, 1], vertical_alignment="bottom")
 
 with c1:
     st.markdown(f"""
@@ -56,12 +57,12 @@ with c1:
     """, unsafe_allow_html=True)
 
 with c2:
-    # Render buttons tightly
+    # Use gap="small" to keep them together, but rely on CSS for width
     b_cols = st.columns(len(TIME_MAP), gap="small")
     for i, label in enumerate(TIME_MAP.keys()):
         is_active = st.session_state["dashboard_period"] == label
-        # Use 'primary' kind for active, 'secondary' for inactive
         kind = "primary" if is_active else "secondary"
+        # We assume CSS will handle the squishing now
         if b_cols[i].button(label, key=label, type=kind, use_container_width=True):
             st.session_state["dashboard_period"] = label
             st.rerun()

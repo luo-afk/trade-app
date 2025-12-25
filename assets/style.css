@@ -1,33 +1,49 @@
 /* --- GLOBAL LAYOUT --- */
 .block-container {
-    padding-top: 2rem !important;
+    padding-top: 3.5rem !important; /* Added more space at top to prevent cutoff */
     padding-bottom: 2rem !important;
     max-width: 95% !important;
 }
 
-/* --- SIDEBAR --- */
-/* This ensures the sidebar doesn't jump around */
-[data-testid="stSidebar"] {
-    min-width: 200px;
-    max-width: 300px;
+/* --- SEARCH BAR FIX --- */
+div[data-testid="stTextInput"] {
+    margin-top: 0px !important; /* Removed negative margin */
+}
+div[data-testid="stTextInput"] input {
+    background-color: #121212;
+    border: 1px solid #333;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
 }
 
-/* --- TIME BUTTONS (The Fix) --- */
-/* Target the buttons specifically in the dashboard columns */
+/* --- TIME BUTTONS (The "No Wrap" Fix) --- */
+/* We target the specific text paragraphs inside the buttons to force single line */
+div[data-testid="column"] button p {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 div[data-testid="column"] button {
     background-color: #121212 !important;
     color: #888 !important;
     border: 1px solid #333 !important;
     border-radius: 6px !important;
     
-    /* Force Single Line & Size */
+    /* CRITICAL: Force horizontal layout */
     white-space: nowrap !important;
-    padding: 0px 5px !important;
-    font-size: 11px !important;
-    min-height: 0px !important;
-    height: 28px !important;
-    line-height: 28px !important;
-    width: 100%;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    
+    padding: 0px 0px !important; /* Zero padding to save space */
+    min-height: 30px !important;
+    height: 30px !important;
+    width: 100% !important;
 }
 
 div[data-testid="column"] button:hover {
@@ -35,17 +51,14 @@ div[data-testid="column"] button:hover {
     color: #00FF00 !important;
 }
 
-div[data-testid="column"] button:focus, div[data-testid="column"] button:active {
-    background-color: #1E1E1E !important;
+/* Active State (Primary) */
+div[data-testid="column"] button[kind="primary"] {
+    background-color: #1a1a1a !important;
     color: #00FF00 !important;
     border-color: #00FF00 !important;
 }
-
-/* Highlight the 'Primary' button (Active State) */
-div[data-testid="column"] button[kind="primary"] {
+div[data-testid="column"] button[kind="primary"] p {
     color: #00FF00 !important;
-    border-color: #00FF00 !important;
-    background-color: #1a1a1a !important;
 }
 
 /* --- TICKER TAPE --- */
@@ -69,18 +82,6 @@ div[data-testid="column"] button[kind="primary"] {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-/* --- SEARCH BAR --- */
-div[data-testid="stTextInput"] {
-    margin-top: -15px;
-}
-div[data-testid="stTextInput"] input {
-    background-color: #121212;
-    border: 1px solid #333;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 12px;
 }
 
 /* --- CHART --- */
