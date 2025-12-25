@@ -1,9 +1,9 @@
 [theme]
-primaryColor = "#00FF7F"
+primaryColor = "#00C805"  # Professional Robinhood/Public Green (Darker)
 backgroundColor = "#0E1117"
 secondaryBackgroundColor = "#161b22"
 textColor = "#FAFAFA"
 font = "sans serif"
 
 [client]
-toolbarMode = "minimal" # Hides the top right "hamburger" menu to look like a real app
+toolbarMode = "minimal"

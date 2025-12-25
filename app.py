@@ -1,27 +1,28 @@
 import streamlit as st
 from utils.auth import check_login
 
-# 1. Config
-st.set_page_config(page_title="Family Alpha", page_icon="📈", layout="wide")
+# 1. Config - Professional Icon
+st.set_page_config(page_title="Family Alpha", page_icon="🏛️", layout="wide")
 
 # 2. Auth
 user = check_login()
 
-# 3. Navigation with Professional Icons
+# 3. Navigation - Professional Material Icons
 if st.session_state["authenticated"]:
     
     pages = {
-        "Main": [
-            st.Page("views/dashboard.py", title="Portfolio", icon=":material/dashboard:", default=True),
-            st.Page("views/leaderboard.py", title="Leaderboard", icon=":material/trophy:"),
+        "Overview": [
+            st.Page("views/dashboard.py", title="Portfolio", icon=":material/account_balance_wallet:", default=True),
+            st.Page("views/compare.py", title="Compare", icon=":material/compare_arrows:"),
+            st.Page("views/leaderboard.py", title="Leaderboard", icon=":material/leaderboard:"),
         ],
-        "Trading": [
-            st.Page("views/entry.py", title="Trade", icon=":material/swap_horiz:"),
-            st.Page("views/journal.py", title="History", icon=":material/history:"),
-            st.Page("views/stock.py", title="Research", icon=":material/search:"), # New Page
+        "Market": [
+            st.Page("views/stock.py", title="Research", icon=":material/search:"),
+            st.Page("views/entry.py", title="Trade", icon=":material/trending_up:"),
+            st.Page("views/journal.py", title="History", icon=":material/receipt_long:"),
         ],
         "Account": [
-            st.Page("views/profile.py", title="Settings", icon=":material/settings:"),
+            st.Page("views/profile.py", title="Settings", icon=":material/person:"),
         ]
     }
 

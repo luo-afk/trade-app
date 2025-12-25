@@ -1,3 +1,5 @@
+st.session_state["current_page"] = "dashboard"
+
 import streamlit as st
 import plotly.graph_objects as go
 from utils.db import get_trades
