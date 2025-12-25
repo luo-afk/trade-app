@@ -1,0 +1,24 @@
+/* Make sidebar tighter and more professional */
+[data-testid="stSidebar"] {
+    width: 250px !important;
+    padding-top: 2rem;
+}
+
+/* Hide default streamlit menu decoration */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+
+/* Custom Search Bar Styling */
+div[data-testid="stTextInput"] input {
+    border-radius: 12px;
+    background-color: #161b22;
+    border: 1px solid #30363d;
+}
+
+/* Metric Containers */
+div[data-testid="metric-container"] {
+    background-color: #161b22;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+}

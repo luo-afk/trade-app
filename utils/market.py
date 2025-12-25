@@ -1,6 +1,8 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+import datetime
+import pytz
 
 @st.cache_data(ttl=300)  # Cache data for 5 minutes (prevents slow loading)
 def get_current_price(ticker):
@@ -63,3 +65,22 @@ def get_common_tickers():
         "JNJ", "PFE", "LLY", "UNH", # Healthcare
         "AMD", "INTC", "QCOM", "CRM", "ADBE" # Chips/Software
     ]
+
+def get_market_status():
+    """Returns (Color, StatusText, DateString)"""
+    tz = pytz.timezone('US/Eastern')
+    now = datetime.datetime.now(tz)
+
+    # Simple Logic: Mon-Fri, 9:30am - 4:00pm
+    is_weekday = now.weekday() < 5
+    # Decimal hours for easy comparison (e.g. 9:30 is 9.5)
+    current_hour = now.hour + (now.minute / 60)
+
+    is_open = is_weekday and (9.5 <= current_hour < 16.0)
+
+    date_str = now.strftime("%B %d, %Y")
+
+    if is_open:
+        return "green", "Market Open", date_str
+    else:
+        return "gray", "Market Closed", date_str
