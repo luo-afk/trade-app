@@ -1,48 +1,64 @@
-/* --- RESET SIDEBAR TO DEFAULT (SHOW WORDS) --- */
-/* We removed the fixed width constraint here so text reappears */
-
-/* --- COMPACT LAYOUT --- */
-/* Reduces the huge whitespace at the top of Streamlit apps */
+/* --- GLOBAL --- */
 .block-container {
     padding-top: 1rem !important;
     padding-bottom: 2rem !important;
     max-width: 95% !important;
 }
 
-/* --- TOP BAR (TICKER TAPE) --- */
-.ticker-tape {
-    display: flex;
-    gap: 20px;
-    background-color: #121212;
-    padding: 8px 15px;
-    border-radius: 8px;
-    border: 1px solid #333;
-    overflow-x: auto;
-    white-space: nowrap;
-    margin-bottom: 10px;
-    align-items: center;
-    font-family: sans-serif;
-    font-size: 13px;
-}
+/* --- SIDEBAR --- */
+/* Restore default behavior (text visible) */
 
-.ticker-item {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.ticker-symbol {
-    font-weight: 600;
-    color: #AAA;
-}
-
-/* --- SEARCH INPUT COMPACT --- */
+/* --- SEARCH BAR --- */
 div[data-testid="stTextInput"] {
     margin-bottom: 0px !important;
 }
 div[data-testid="stTextInput"] input {
-    padding: 8px 12px;
-    font-size: 14px;
-    background-color: #0E1117;
+    background-color: #121212;
     border: 1px solid #333;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    padding: 8px 12px;
+}
+
+/* --- TICKER TAPE (Top Bar) --- */
+.ticker-tape {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    background-color: #121212;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #2a2a2a;
+    overflow-x: auto;
+    white-space: nowrap;
+    margin-bottom: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ticker-item {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.ticker-symbol {
+    font-weight: 700;
+    color: #E0E0E0;
+}
+
+/* --- METRIC CARDS --- */
+div[data-testid="metric-container"] {
+    background-color: #121212;
+    border: 1px solid #2a2a2a;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+/* --- CHART CLEANUP --- */
+.js-plotly-plot .plotly .main-svg {
+    background: rgba(0,0,0,0) !important;
 }
